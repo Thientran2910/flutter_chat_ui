@@ -55,6 +55,7 @@ class Message extends StatelessWidget {
     required this.usePreviewData,
     this.userAgent,
     this.videoMessageBuilder,
+    this.buildMessageTime,
   });
 
   /// Build an audio message inside predefined bubble.
@@ -190,6 +191,8 @@ class Message extends StatelessWidget {
   final Widget Function(types.VideoMessage, {required int messageWidth})?
       videoMessageBuilder;
 
+  final Widget Function(int?)? buildMessageTime;
+
   Widget _avatarBuilder() => showAvatar
       ? avatarBuilder?.call(message.author) ??
           UserAvatar(
@@ -221,13 +224,19 @@ class Message extends StatelessWidget {
               child: _messageBuilder(),
             ),
           );
-    return bubbleBuilder != null
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        bubbleBuilder != null
         ? bubbleBuilder!(
             _messageBuilder(),
             message: message,
             nextMessageInGroup: roundBorder,
           )
-        : defaultMessage;
+        : defaultMessage,
+        _buildTime(),
+      ],
+    );
   }
 
   Widget _messageBuilder() {
@@ -301,6 +310,14 @@ class Message extends StatelessWidget {
             : MessageStatus(status: message.status),
       ),
     );
+  }
+
+  Widget _buildTime() {
+    if(buildMessageTime != null) {
+      return buildMessageTime!(message.createdAt);
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -378,8 +395,12 @@ class Message extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 GestureDetector(
-                  onDoubleTap: () => onMessageDoubleTap?.call(context, message),
-                  onLongPress: () => onMessageLongPress?.call(context, message),
+                  onDoubleTap: onMessageDoubleTap != null
+                      ? () => onMessageDoubleTap?.call(context, message)
+                      : null,
+                  onLongPress: onMessageLongPress != null
+                      ? () => onMessageLongPress?.call(context, message)
+                      : null,
                   onTap: () => onMessageTap?.call(context, message),
                   child: onMessageVisibilityChanged != null
                       ? VisibilityDetector(
